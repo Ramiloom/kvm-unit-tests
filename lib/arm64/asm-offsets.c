@@ -8,6 +8,7 @@
 #include <libcflat.h>
 #include <kbuild.h>
 #include <asm/ptrace.h>
+#include <asm/smp.h>
 
 int main(void)
 {
@@ -26,5 +27,6 @@ int main(void)
 	OFFSET(S_ORIG_X0, pt_regs, orig_x0);
 	OFFSET(S_SYSCALLNO, pt_regs, syscallno);
 	DEFINE(S_FRAME_SIZE, sizeof(struct pt_regs));
+	OFFSET(SECONDARY_DATA_STACK, secondary_data, stack);
 	return 0;
 }

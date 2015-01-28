@@ -32,6 +32,7 @@ start:
 	push	{r0-r1}
 
 	/* set up vector table and mode stacks */
+	ldr	r0, =exception_stacks
 	bl	exceptions_init
 
 	/* complete setup */
@@ -62,19 +63,40 @@ exceptions_init:
 	mcr	p15, 0, r2, c12, c0, 0	@ write VBAR
 
 	mrs	r2, cpsr
-	ldr	r1, =exception_stacks
 
 	/* first frame reserved for svc mode */
-	set_mode_stack	UND_MODE, r1
-	set_mode_stack	ABT_MODE, r1
-	set_mode_stack	IRQ_MODE, r1
-	set_mode_stack	FIQ_MODE, r1
+	set_mode_stack	UND_MODE, r0
+	set_mode_stack	ABT_MODE, r0
+	set_mode_stack	IRQ_MODE, r0
+	set_mode_stack	FIQ_MODE, r0
 
 	msr	cpsr_cxsf, r2		@ back to svc mode
 	isb
 	mov	pc, lr
 
 .text
+
+.global secondary_entry
+secondary_entry:
+	/* set up vector table and mode stacks */
+	ldr	r4, =secondary_data
+	ldr	r0, [r4, #SECONDARY_DATA_ESTACKS]
+	bl	exceptions_init
+
+	/* enable the MMU */
+	mov	r1, #0
+	ldr	r0, =mmu_idmap
+	ldr	r0, [r0]
+	bl	asm_mmu_enable
+
+	/* set the stack */
+	ldr	sp, [r4, #SECONDARY_DATA_STACK]
+
+	/* finish init in C code */
+	bl	secondary_cinit
+
+	/* r0 is now the entry function, run it */
+	mov	pc, r0
 
 .globl halt
 halt:

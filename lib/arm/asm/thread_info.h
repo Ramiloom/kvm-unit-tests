@@ -9,6 +9,7 @@
  */
 #include <asm/processor.h>
 #include <asm/page.h>
+#include <asm/smp.h>
 
 #define __MIN_THREAD_SIZE	16384
 #if PAGE_SIZE > __MIN_THREAD_SIZE
@@ -16,7 +17,17 @@
 #else
 #define THREAD_SIZE		__MIN_THREAD_SIZE
 #endif
+
+#ifdef __arm__
+/*
+ * arm needs room left at the top for the exception stacks,
+ * and the stack needs to be 8-byte aligned
+ */
+#define THREAD_START_SP \
+	((THREAD_SIZE - SECONDARY_EXCEPTION_STACKS_SIZE) & ~7)
+#else
 #define THREAD_START_SP		(THREAD_SIZE - 16)
+#endif
 
 #define TIF_USER_MODE		(1U << 0)
 
